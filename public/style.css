@@ -1,84 +1,246 @@
+/* General Layout */
 body {
-    background-color: #222;
+    background-color: #1a1a1a;
     color: white;
-    font-family: 'Segoe UI', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     margin: 0;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
+    overflow: hidden;
 }
 
 .hidden { display: none !important; }
 
+/* Login */
 #login-screen {
-    background: #333; padding: 40px; border-radius: 10px;
-    box-shadow: 0 0 20px black; text-align: center;
+    text-align: center;
+    background: #2c2c2e;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+.login-box input {
+    display: block;
+    margin: 10px auto;
+    padding: 12px;
+    width: 200px;
+    border-radius: 10px;
+    border: none;
+    background: #3a3a3c;
+    color: white;
+    font-size: 16px;
+}
+.btn-primary {
+    background: #0a84ff;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    font-weight: 600;
 }
 
+/* Game Container */
 #game-container {
-    position: relative; width: 800px; height: 600px;
+    position: relative;
+    width: 800px;
+    height: 600px;
     box-shadow: 0 0 50px rgba(0,0,0,0.8);
+    border-radius: 20px;
 }
 
 canvas {
-    background-color: #27ae60; border-radius: 20px;
-    border: 10px solid #5d4037;
+    background-color: #27ae60; /* Poker Green */
+    border-radius: 20px;
+    border: 12px solid #5d4037; /* Wood */
+    display: block;
 }
 
+/* UI Overlay */
 #ui-layer {
     position: absolute; top: 0; left: 0;
-    width: 100%; height: 100%; pointer-events: none;
+    width: 100%; height: 100%;
+    pointer-events: none;
 }
 
-/* NEW: Turn Bar Styles */
+/* Turn Bar Indicator */
 #turn-bar {
     position: absolute;
-    top: 20px; left: 50%;
+    top: 25px; left: 50%;
     transform: translateX(-50%);
-    padding: 10px 30px;
+    padding: 12px 40px;
     border-radius: 30px;
-    font-size: 20px;
-    font-weight: bold;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    transition: background 0.3s;
+    font-size: 18px;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
-
-/* Specific colors for states */
-.turn-mine { background-color: #2ecc71; color: white; border: 2px solid white; transform: translateX(-50%) scale(1.1) !important; }
-.turn-others { background-color: #f39c12; color: white; }
-.turn-waiting { background-color: #7f8c8d; color: #ddd; }
+.turn-mine {
+    background-color: #30d158; /* Apple Green */
+    color: white;
+    border: 3px solid white;
+    transform: translateX(-50%) scale(1.1) !important;
+}
+.turn-others {
+    background-color: #ff9f0a; /* Apple Orange */
+    color: white;
+}
+.turn-waiting {
+    background-color: #636366;
+    color: #aeaeb2;
+}
 
 #room-info {
-    position: absolute; top: 10px; left: 20px;
-    font-size: 14px; opacity: 0.7;
-}
-
-#controls-area {
-    position: absolute; bottom: 20px; left: 50%;
-    transform: translateX(-50%); pointer-events: auto;
-}
-
-.control-box {
-    background: rgba(0, 0, 0, 0.7); padding: 20px;
-    border-radius: 10px; backdrop-filter: blur(5px);
+    position: absolute; top: 15px; left: 20px;
+    color: rgba(255,255,255,0.6);
+    font-size: 14px;
 }
 
 #start-btn {
     position: absolute; top: 50%; left: 50%;
-    transform: translate(-50%, -50%); pointer-events: auto;
-    padding: 15px 30px; font-size: 20px;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+    background: #0a84ff;
+    color: white; border: none;
+    padding: 15px 40px;
+    border-radius: 12px;
+    font-size: 20px; font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.4);
 }
 
 #notification-area {
-    position: absolute; top: 80px; width: 100%;
-    text-align: center; font-size: 24px; color: #e74c3c;
-    text-shadow: 2px 2px 0px black; font-weight: bold;
+    position: absolute; top: 90px; width: 100%;
+    text-align: center;
+    font-size: 28px;
+    font-weight: 800;
+    color: #ff3b30;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    pointer-events: none;
 }
 
-button { cursor: pointer; border: none; padding: 10px 20px; border-radius: 5px; color: white; font-weight: bold; margin: 5px;}
-.btn-green { background: #27ae60; }
-.btn-red { background: #c0392b; }
-.btn-blue { background: #2980b9; }
-input, select { padding: 8px; border-radius: 5px; border: none; font-size: 16px;}
+/* --- THE BID PANEL --- */
+#controls-area {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 340px;
+    pointer-events: auto;
+}
+
+#bid-panel {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 20px;
+    border-radius: 24px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    text-align: center;
+    color: #1c1c1e;
+}
+
+.panel-header {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #8e8e93;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.bid-row {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.label {
+    font-size: 12px;
+    color: #8e8e93;
+    margin-bottom: 8px;
+}
+
+/* Stepper */
+.stepper {
+    display: flex;
+    align-items: center;
+    background: #e5e5ea;
+    border-radius: 14px;
+    padding: 4px;
+}
+.step-btn {
+    width: 44px; height: 44px;
+    background: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 24px;
+    line-height: 44px;
+    color: #0a84ff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+.step-btn:active { transform: scale(0.95); }
+.step-btn:disabled { color: #d1d1d6; box-shadow: none; background: #f2f2f7; cursor: default; }
+#displayQty {
+    font-size: 26px; font-weight: 700;
+    width: 60px; text-align: center;
+}
+
+/* Dice Selector */
+#dice-selector {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+.select-die {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: white;
+    border: 2px solid #e5e5ea;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s;
+}
+.select-die.selected {
+    border-color: #0a84ff;
+    background-color: #eaf4ff;
+    box-shadow: 0 4px 12px rgba(10, 132, 255, 0.2);
+    transform: translateY(-2px);
+}
+.select-die.disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    background: #f2f2f7;
+    border-color: #f2f2f7;
+}
+
+/* Buttons */
+.action-row { display: flex; gap: 10px; margin-top: 10px; }
+#btn-place-bid {
+    flex: 2;
+    background: #0a84ff; color: white; border: none;
+    padding: 14px; border-radius: 14px;
+    font-size: 16px; font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+#btn-place-bid:hover { background: #0071e3; }
+
+#btn-liar {
+    flex: 1;
+    background: #ff3b30; color: white; border: none;
+    padding: 14px; border-radius: 14px;
+    font-size: 16px; font-weight: 600;
+    cursor: pointer;
+}
+#btn-liar:disabled { background: #ff9f9a; cursor: not-allowed; }
