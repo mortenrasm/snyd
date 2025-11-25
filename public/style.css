@@ -1,0 +1,95 @@
+body {
+    background-color: #222;
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.hidden { display: none !important; }
+
+#login-screen {
+    text-align: center;
+    background: #333;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px black;
+}
+
+#game-container {
+    position: relative;
+    width: 800px;
+    height: 600px;
+    box-shadow: 0 0 50px rgba(0,0,0,0.8);
+}
+
+canvas {
+    background-color: #27ae60; /* Poker table green */
+    border-radius: 20px;
+    border: 10px solid #5d4037; /* Wood border */
+}
+
+/* UI Overlay positioning */
+#ui-layer {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none; /* Let clicks pass through to canvas if needed */
+}
+
+/* Re-enable pointer events for buttons */
+#controls-area, #start-btn, input, select, button {
+    pointer-events: auto; 
+}
+
+#top-info {
+    position: absolute;
+    top: 10px; left: 20px;
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px black;
+}
+
+#controls-area {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.control-box {
+    background: rgba(0, 0, 0, 0.6);
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    backdrop-filter: blur(5px);
+}
+
+#start-btn {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 15px 30px;
+    font-size: 20px;
+}
+
+#notification-area {
+    position: absolute;
+    top: 80px;
+    width: 100%;
+    text-align: center;
+    font-size: 24px;
+    color: #f1c40f;
+    text-shadow: 2px 2px 4px black;
+    font-weight: bold;
+}
+
+button { cursor: pointer; border: none; padding: 10px 20px; border-radius: 5px; color: white; font-weight: bold;}
+.btn-green { background: #2ecc71; }
+.btn-red { background: #e74c3c; }
+.btn-blue { background: #3498db; }
+input, select { padding: 8px; border-radius: 5px; border: none;}
