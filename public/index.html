@@ -19,36 +19,27 @@
 
     <div id="game-container" class="hidden">
         <canvas id="gameCanvas" width="800" height="600"></canvas>
-        
         <div id="ui-layer">
-            
             <div id="turn-bar" class="turn-waiting">Waiting...</div>
             <div id="room-info">Room: <span id="dispRoom"></span></div>
-
-            <!-- Ready Area -->
             <div id="ready-area" class="hidden">
                 <div class="ready-status" id="ready-status-text">Waiting for players...</div>
                 <button id="btn-ready" onclick="toggleReady()">I'M READY</button>
             </div>
-            
             <div id="notification-area"></div>
-
-            <!-- BID CONTROLS -->
             <div id="controls-area" class="hidden">
                 <div id="bid-panel">
-                    
-                    <!-- NEW: Your Dice Display inside the panel -->
+                    <!-- NEW: Current Bid Display -->
+                    <div id="current-bid-display">
+                        <!-- Injected by JS -->
+                    </div>
+                    <div class="divider"></div>
                     <div class="hand-section">
                         <div class="panel-header">Your Hand</div>
-                        <div id="my-hand-display">
-                            <!-- Large Dice Injected Here -->
-                        </div>
+                        <div id="my-hand-display"></div>
                     </div>
-
                     <div class="divider"></div>
-
                     <div class="panel-header">Make your bid</div>
-                    
                     <div class="bid-row">
                         <span class="label">Quantity</span>
                         <div class="stepper">
@@ -57,22 +48,18 @@
                             <button class="step-btn" onclick="adjustQty(1)">+</button>
                         </div>
                     </div>
-
                     <div class="bid-row">
                         <span class="label">Dice Face</span>
                         <div id="dice-selector"></div>
                     </div>
-
                     <div class="action-row">
                         <button id="btn-place-bid" onclick="submitBid()">Place Bid</button>
                         <button id="btn-liar" onclick="callLiar()">Call Liar!</button>
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
-
     <script src="/socket.io/socket.io.js"></script>
     <script src="script.js"></script>
 </body>
