@@ -9,9 +9,7 @@ let myRoom = "";
 
 // --- Socket Events ---
 
-socket.on('connect', () => {
-    myId = socket.id;
-});
+socket.on('connect', () => { myId = socket.id; });
 
 socket.on('roomUpdate', (room) => {
     gameState = room;
@@ -27,19 +25,15 @@ socket.on('gameStarted', (room) => {
 });
 
 socket.on('roundOver', (data) => {
-    // We update local state to show revealed dice
     gameState.players = data.allPlayers; 
     gameState.gameActive = false;
     gameState.currentBid = null;
-    
     notify(data.message);
     updateUI();
     drawGame();
 });
 
-socket.on('notification', (msg) => {
-    notify(msg);
-});
+socket.on('notification', (msg) => { notify(msg); });
 
 // --- UI Logic ---
 
@@ -55,9 +49,7 @@ function joinGame() {
     socket.emit('joinRoom', { username: myUsername, room: myRoom });
 }
 
-function startGame() {
-    socket.emit('startGame', myRoom);
-}
+function startGame() { socket.emit('startGame', myRoom); }
 
 function placeBid() {
     const qty = parseInt(document.getElementById('bidQty').value);
@@ -65,14 +57,12 @@ function placeBid() {
     socket.emit('placeBid', { room: myRoom, quantity: qty, face: face });
 }
 
-function callLiar() {
-    socket.emit('callLiar', myRoom);
-}
+function callLiar() { socket.emit('callLiar', myRoom); }
 
 function notify(msg) {
     const el = document.getElementById('notification-area');
     el.innerText = msg;
-    setTimeout(() => { el.innerText = ""; }, 5000); // Clear after 5s
+    setTimeout(() => { el.innerText = ""; }, 5000);
 }
 
 function updateUI() {
@@ -81,110 +71,119 @@ function updateUI() {
     const startBtn = document.getElementById('start-btn');
     const controls = document.getElementById('controls-area');
     const liarBtn = document.getElementById('btnLiar');
+    const turnBar = document.getElementById('turn-bar');
 
-    // Show start button if game not active
     if (!gameState.gameActive) {
+        // Game Not Running
         startBtn.classList.remove('hidden');
         controls.classList.add('hidden');
+        turnBar.innerText = "Waiting for game to start...";
+        turnBar.className = "turn-waiting";
     } else {
+        // Game Running
         startBtn.classList.add('hidden');
         
-        // Is it my turn?
-        const myIndex = gameState.players.findIndex(p => p.id === myId);
-        if (myIndex === gameState.currentTurnIndex) {
+        const activePlayer = gameState.players[gameState.currentTurnIndex];
+        const isMyTurn = (activePlayer.id === myId);
+
+        if (isMyTurn) {
             controls.classList.remove('hidden');
-            liarBtn.disabled = !gameState.currentBid; // Can't call liar on first turn
-            notify("YOUR TURN!");
+            liarBtn.disabled = !gameState.currentBid; 
+            
+            // UPDATE TEXT BAR FOR ME
+            turnBar.innerText = "IT'S YOUR TURN!";
+            turnBar.className = "turn-mine";
         } else {
             controls.classList.add('hidden');
+            
+            // UPDATE TEXT BAR FOR OTHERS
+            turnBar.innerText = `Waiting for ${activePlayer.username}...`;
+            turnBar.className = "turn-others";
         }
     }
 }
 
-// --- CANVAS DRAWING LOGIC ---
+// --- CANVAS DRAWING ---
 
 function drawGame() {
-    // 1. Clear Screen
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
     if (!gameState) return;
 
     const cx = canvas.width / 2;
     const cy = canvas.height / 2;
-    const tableRadius = 200;
+    const tableRadius = 220;
 
-    // 2. Draw Table Center Info
+    // Center Info
     ctx.textAlign = "center";
     if (gameState.currentBid) {
         ctx.fillStyle = "#f1c40f";
-        ctx.font = "bold 30px Arial";
+        ctx.font = "bold 40px Arial";
         ctx.fillText(`${gameState.currentBid.quantity} x `, cx - 20, cy);
-        drawDieFace(cx + 20, cy - 15, 30, gameState.currentBid.face);
+        drawDieFace(cx + 30, cy - 20, 40, gameState.currentBid.face);
         ctx.font = "16px Arial";
         ctx.fillStyle = "#ddd";
-        ctx.fillText(`(Current Bid)`, cx, cy + 35);
+        ctx.fillText(`(Current Bid)`, cx, cy + 40);
     } else if (gameState.gameActive) {
-        ctx.fillStyle = "white";
-        ctx.font = "20px Arial";
-        ctx.fillText("Make a bid...", cx, cy);
+        ctx.fillStyle = "white"; ctx.font = "20px Arial";
+        ctx.fillText("Waiting for first bid...", cx, cy);
     }
 
-    // 3. Draw Players in a circle
+    // Players
     const totalPlayers = gameState.players.length;
-    
     gameState.players.forEach((player, i) => {
-        // Calculate angle: (360 / count) * index
         const angle = (Math.PI * 2 / totalPlayers) * i;
-        
-        // Position player around the circle
         const px = cx + Math.cos(angle) * tableRadius;
         const py = cy + Math.sin(angle) * tableRadius;
-
         drawPlayer(player, px, py, i === gameState.currentTurnIndex);
     });
 }
 
 function drawPlayer(player, x, y, isTurn) {
-    // Avatar Circle
+    // 1. Draw Active Player Glow/Indicator
+    if (isTurn && gameState.gameActive) {
+        ctx.beginPath();
+        ctx.arc(x, y, 45, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(241, 196, 15, 0.3)"; // Yellow glow
+        ctx.fill();
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "#f1c40f";
+        ctx.stroke();
+    }
+
+    // 2. Avatar Circle
     ctx.beginPath();
     ctx.arc(x, y, 30, 0, Math.PI * 2);
-    ctx.fillStyle = isTurn ? "#3498db" : "#444";
+    ctx.fillStyle = (player.id === myId) ? "#2980b9" : "#444";
     ctx.fill();
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = isTurn ? "white" : "#222";
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#fff";
     ctx.stroke();
-    ctx.closePath();
 
-    // Name
+    // 3. Name
     ctx.fillStyle = "white";
-    ctx.font = "bold 16px Arial";
+    ctx.font = isTurn ? "bold 18px Arial" : "16px Arial";
     ctx.textAlign = "center";
-    ctx.fillText(player.username, x, y + 50);
+    ctx.fillText(player.username, x, y + 55);
 
-    // Dice Container Background
-    // If it's me OR the round is over, I can see the dice values
-    // Otherwise, I see '?' blocks
+    // 4. Turn Text on Canvas
+    if (isTurn && gameState.gameActive) {
+        ctx.fillStyle = "#f1c40f";
+        ctx.font = "bold 12px Arial";
+        ctx.fillText("THINKING...", x, y - 40);
+    }
+
+    // 5. Dice
     const showValues = (player.id === myId) || (!gameState.gameActive);
-    
-    // Draw Dice below name
     const diceSize = 25;
     const gap = 5;
     const totalWidth = (player.diceCount * diceSize) + ((player.diceCount-1) * gap);
     let startX = x - (totalWidth / 2);
-    let startY = y + 60;
+    let startY = y + 65;
 
     if (player.diceCount > 0) {
-        // We iterate based on dice count. 
-        // Note: gameState.players[i].dice might be empty if it's not me and game is active
-        // But the server sends *my* dice.
-        
         for(let i=0; i<player.diceCount; i++) {
-            let val = 0; // 0 means hidden
-            
-            if (showValues && player.dice[i]) {
-                val = player.dice[i];
-            }
-            
+            let val = 0; 
+            if (showValues && player.dice[i]) val = player.dice[i];
             drawDieFace(startX + (i * (diceSize + gap)), startY, diceSize, val);
         }
     } else {
@@ -195,59 +194,45 @@ function drawPlayer(player, x, y, isTurn) {
 }
 
 function drawDieFace(x, y, size, val) {
-    // Draw Box
-    ctx.fillStyle = "white";
-    if (val === 0) ctx.fillStyle = "#7f8c8d"; // Gray if hidden
-    
-    ctx.beginPath();
-    ctx.roundRect(x, y, size, size, 5); // Round rect needs newer browsers, fallback to rect if needed
-    ctx.fill();
+    ctx.fillStyle = (val === 0) ? "#95a5a6" : "white";
     ctx.strokeStyle = "#333";
     ctx.lineWidth = 1;
+
+    // Draw Rounded Square
+    ctx.beginPath();
+    ctx.roundRect(x, y, size, size, 4);
+    ctx.fill();
     ctx.stroke();
 
-    // Draw Pips (Dots)
+    if (val === 0) {
+        ctx.fillStyle = "#bdc3c7";
+        ctx.font = `bold ${size/1.5}px Arial`;
+        ctx.textAlign = "center"; 
+        ctx.textBaseline = "middle";
+        ctx.fillText("?", x + size/2, y + size/2 + 2);
+        return;
+    }
+
+    // Dots
     ctx.fillStyle = "black";
     const dotSize = size / 5;
-    const c = size / 2; // center offset
-    const q = size / 4; // quarter offset
-
-    // Helper to draw dot relative to x,y
+    const c = size / 2; 
+    const q = size / 4; 
     const dot = (dx, dy) => {
         ctx.beginPath();
         ctx.arc(x + dx, y + dy, dotSize/2, 0, Math.PI*2);
         ctx.fill();
     };
 
-    if (val === 0) {
-        // Draw Question Mark
-        ctx.fillStyle = "#ccc";
-        ctx.font = `bold ${size/1.5}px Arial`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText("?", x + c, y + c);
-        return;
-    }
-
-    // Standard Dice Logic
-    if (val % 2 === 1) dot(c, c); // Center dot for 1, 3, 5
-    if (val > 1) { dot(q, q); dot(size-q, size-q); } // Top-left, Bottom-right
-    if (val > 3) { dot(size-q, q); dot(q, size-q); } // Top-right, Bottom-left
-    if (val === 6) { dot(q, c); dot(size-q, c); } // Middle-left, Middle-right
+    if (val % 2 === 1) dot(c, c);
+    if (val > 1) { dot(q, q); dot(size-q, size-q); }
+    if (val > 3) { dot(size-q, q); dot(q, size-q); }
+    if (val === 6) { dot(q, c); dot(size-q, c); }
 }
 
-// Polyfill for roundRect if browser is old
 if (!CanvasRenderingContext2D.prototype.roundRect) {
     CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
         if (w < 2 * r) r = w / 2;
         if (h < 2 * r) r = h / 2;
-        this.beginPath();
-        this.moveTo(x + r, y);
-        this.arcTo(x + w, y, x + w, y + h, r);
-        this.arcTo(x + w, y + h, x, y + h, r);
-        this.arcTo(x, y + h, x, y, r);
-        this.arcTo(x, y, x + w, y, r);
-        this.closePath();
-        return this;
-    };
-}
+        this.beginPath(); this.moveTo(x + r, y);
+        this.arcTo(x + w, y, x + w, y + h,
