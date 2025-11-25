@@ -25,7 +25,7 @@
             <div id="turn-bar" class="turn-waiting">Waiting...</div>
             <div id="room-info">Room: <span id="dispRoom"></span></div>
 
-            <!-- NEW: Ready Button Area -->
+            <!-- Ready Area -->
             <div id="ready-area" class="hidden">
                 <div class="ready-status" id="ready-status-text">Waiting for players...</div>
                 <button id="btn-ready" onclick="toggleReady()">I'M READY</button>
@@ -33,8 +33,20 @@
             
             <div id="notification-area"></div>
 
+            <!-- BID CONTROLS -->
             <div id="controls-area" class="hidden">
                 <div id="bid-panel">
+                    
+                    <!-- NEW: Your Dice Display inside the panel -->
+                    <div class="hand-section">
+                        <div class="panel-header">Your Hand</div>
+                        <div id="my-hand-display">
+                            <!-- Large Dice Injected Here -->
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
                     <div class="panel-header">Make your bid</div>
                     
                     <div class="bid-row">
