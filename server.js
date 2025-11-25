@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
@@ -7,11 +6,10 @@ const path = require('path');
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Game State
 const rooms = {};
 
 io.on('connection', (socket) => {
-    console.log('A user connected: ' + socket.id);
+    console.log('User connected: ' + socket.id);
 
     socket.on('joinRoom', ({ username, room }) => {
         socket.join(room);
@@ -20,7 +18,7 @@ io.on('connection', (socket) => {
             rooms[room] = {
                 players: [],
                 currentTurnIndex: 0,
-                currentBid: null, // { quantity: 0, face: 0, player: "" }
+                currentBid: null, 
                 gameActive: false
             };
         }
@@ -28,13 +26,11 @@ io.on('connection', (socket) => {
         const newPlayer = {
             id: socket.id,
             username: username,
-            dice: [], // Will hold array like [1, 5, 6, 2, 3]
+            dice: [],
             diceCount: 5
         };
 
         rooms[room].players.push(newPlayer);
-
-        // Notify everyone in room
         io.to(room).emit('roomUpdate', rooms[room]);
     });
 
@@ -43,18 +39,26 @@ io.on('connection', (socket) => {
         if (room && room.players.length > 1) {
             room.gameActive = true;
             room.currentBid = null;
-            room.currentTurnIndex = 0;
+            room.currentTurnIndex = 0; 
             
             // Roll dice for everyone
             room.players.forEach(p => {
                 p.dice = [];
-                for(let i=0; i < p.diceCount; i++) {
-                    p.dice.push(Math.ceil(Math.random() * 6));
+                // Only roll if they are still in the game
+                if(p.diceCount > 0) {
+                    for(let i=0; i < p.diceCount; i++) {
+                        p.dice.push(Math.ceil(Math.random() * 6));
+                    }
+                    p.dice.sort((a,b) => a-b);
                 }
             });
 
+            // Ensure turn starts on someone with dice
+            while(room.players[room.currentTurnIndex].diceCount === 0) {
+                room.currentTurnIndex = (room.currentTurnIndex + 1) % room.players.length;
+            }
+
             io.to(roomName).emit('gameStarted', room);
-            io.to(roomName).emit('roomUpdate', room);
         }
     });
 
@@ -62,16 +66,18 @@ io.on('connection', (socket) => {
         const r = rooms[room];
         if (!r) return;
 
-        // Basic validation (must raise bid)
+        // Server-side validation
         if (r.currentBid) {
-            if (quantity < r.currentBid.quantity) return; // Must start with higher or equal quantity
-            if (quantity === r.currentBid.quantity && face <= r.currentBid.face) return; // If qty equal, face must be higher
+            if (quantity < r.currentBid.quantity) return; 
+            if (quantity === r.currentBid.quantity && face <= r.currentBid.face) return;
         }
 
         r.currentBid = { quantity, face, player: socket.id };
         
-        // Next turn
-        r.currentTurnIndex = (r.currentTurnIndex + 1) % r.players.length;
+        // Move turn to next player with dice
+        do {
+            r.currentTurnIndex = (r.currentTurnIndex + 1) % r.players.length;
+        } while (r.players[r.currentTurnIndex].diceCount === 0);
         
         io.to(room).emit('roomUpdate', r);
     });
@@ -80,50 +86,46 @@ io.on('connection', (socket) => {
         const r = rooms[roomName];
         if (!r || !r.currentBid) return;
 
-        // 1. Reveal all dice
+        // 1. Count Dice (1s are wild)
         const allDice = [];
         r.players.forEach(p => allDice.push(...p.dice));
-
-        // 2. Count dice (1s are usually wild in Snyd)
         const targetFace = r.currentBid.face;
         const count = allDice.filter(d => d === targetFace || d === 1).length;
 
         const bidWasTrue = count >= r.currentBid.quantity;
         
-        // 3. Determine loser
-        // If bid was true (there were enough dice), the Challenger (current turn) loses.
-        // If bid was false (liar!), the Bidder (previous turn) loses.
+        // 2. Determine Loser
         let loserIndex;
         if (bidWasTrue) {
-            loserIndex = r.currentTurnIndex; // The person who called liar loses
+            // Challenger loses (Current Turn)
+            loserIndex = r.currentTurnIndex;
         } else {
-            // Find the player who made the bid
+            // Bidder loses (Previous Turn / Bid Owner)
             loserIndex = r.players.findIndex(p => p.id === r.currentBid.player);
         }
 
         const loser = r.players[loserIndex];
         loser.diceCount--;
 
-        // 4. Remove player if 0 dice
-        if (loser.diceCount === 0) {
-            io.to(roomName).emit('notification', `${loser.username} is out of the game!`);
-            // Logic to handle player removal could go here, for simplicity we keep them in but with 0 dice
-        }
-
-        // 5. Reset round
+        // 3. Reset Round
         r.gameActive = false;
         r.currentBid = null;
+
+        // 4. Set turn to the loser (if they have dice), otherwise next person
+        r.currentTurnIndex = loserIndex;
+        if (loser.diceCount === 0) {
+             do {
+                r.currentTurnIndex = (r.currentTurnIndex + 1) % r.players.length;
+            } while (r.players[r.currentTurnIndex].diceCount === 0);
+        }
         
         io.to(roomName).emit('roundOver', {
-            allPlayers: r.players, // Send full data so everyone sees everyone's dice
-            message: `Result: There were ${count} ${targetFace}s (1s are wild). ${loser.username} lost a die!`
+            allPlayers: r.players,
+            message: `Result: There were ${count} ${targetFace}s. ${loser.username} loses a die!`
         });
-        
-        // Hide dice again in data for next round start (done in startGame logic)
     });
 
     socket.on('disconnect', () => {
-        // Basic cleanup logic would go here
         console.log('User disconnected');
     });
 });
