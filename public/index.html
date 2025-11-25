@@ -7,26 +7,25 @@
 </head>
 <body>
 
-    <!-- LOGIN SCREEN -->
     <div id="login-screen">
-        <h1>Snyd (Canvas)</h1>
+        <h1>Snyd Multiplayer</h1>
         <input type="text" id="username" placeholder="Nickname">
         <input type="text" id="roomName" placeholder="Room Name">
         <button onclick="joinGame()">Join Table</button>
     </div>
 
-    <!-- GAME CONTAINER -->
     <div id="game-container" class="hidden">
-        <!-- The Graphics Layer -->
         <canvas id="gameCanvas" width="800" height="600"></canvas>
         
-        <!-- The UI Overlay Layer -->
         <div id="ui-layer">
-            <div id="top-info">Room: <span id="dispRoom"></span></div>
+            <!-- NEW: Dedicated Turn Indicator Bar -->
+            <div id="turn-bar">Waiting for game start...</div>
             
+            <div id="room-info">Room: <span id="dispRoom"></span></div>
+
             <div id="controls-area" class="hidden">
                 <div class="control-box">
-                    <h3>Place Bid</h3>
+                    <h3>Your Move</h3>
                     <input type="number" id="bidQty" min="1" value="1" style="width:50px"> 
                     <span>x</span>
                     <select id="bidFace">
@@ -37,13 +36,13 @@
                         <option value="6">6</option>
                     </select>
                     <br><br>
-                    <button class="btn-green" onclick="placeBid()">Bid</button>
+                    <button class="btn-green" onclick="placeBid()">Raise Bid</button>
                     <button class="btn-red" id="btnLiar" onclick="callLiar()">Call Liar!</button>
                 </div>
             </div>
 
             <button id="start-btn" class="hidden btn-blue" onclick="startGame()">Start Game</button>
-            <div id="notification-area">Waiting for players...</div>
+            <div id="notification-area"></div>
         </div>
     </div>
 
