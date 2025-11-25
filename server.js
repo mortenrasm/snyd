@@ -27,46 +27,66 @@ io.on('connection', (socket) => {
             id: socket.id,
             username: username,
             dice: [],
-            diceCount: 5
+            diceCount: 5,
+            isReady: false // <--- NEW: Track ready status
         };
 
         rooms[room].players.push(newPlayer);
         io.to(room).emit('roomUpdate', rooms[room]);
     });
 
-    socket.on('startGame', (roomName) => {
+    // NEW: Handle Ready Click
+    socket.on('playerReady', (roomName) => {
         const room = rooms[roomName];
-        if (room && room.players.length > 1) {
-            room.gameActive = true;
-            room.currentBid = null;
-            room.currentTurnIndex = 0; 
-            
-            // Roll dice for everyone
-            room.players.forEach(p => {
-                p.dice = [];
-                // Only roll if they are still in the game
-                if(p.diceCount > 0) {
-                    for(let i=0; i < p.diceCount; i++) {
-                        p.dice.push(Math.ceil(Math.random() * 6));
-                    }
-                    p.dice.sort((a,b) => a-b);
-                }
-            });
+        if (!room) return;
 
-            // Ensure turn starts on someone with dice
-            while(room.players[room.currentTurnIndex].diceCount === 0) {
-                room.currentTurnIndex = (room.currentTurnIndex + 1) % room.players.length;
-            }
+        // Find player and toggle ready
+        const player = room.players.find(p => p.id === socket.id);
+        if (player) {
+            player.isReady = true;
+        }
 
-            io.to(roomName).emit('gameStarted', room);
+        // Check if ALL players are ready
+        const allReady = room.players.every(p => p.isReady);
+        const playerCount = room.players.length;
+
+        // Auto-Start if >1 player and all are ready
+        if (playerCount > 1 && allReady) {
+            startGameLogic(room, roomName);
+        } else {
+            // Just update UI to show checkmarks
+            io.to(roomName).emit('roomUpdate', room);
         }
     });
+
+    function startGameLogic(room, roomName) {
+        room.gameActive = true;
+        room.currentBid = null;
+        room.currentTurnIndex = 0; 
+        
+        // Roll dice
+        room.players.forEach(p => {
+            p.dice = [];
+            if(p.diceCount > 0) {
+                for(let i=0; i < p.diceCount; i++) {
+                    p.dice.push(Math.ceil(Math.random() * 6));
+                }
+                p.dice.sort((a,b) => a-b);
+            }
+        });
+
+        // Find starter
+        while(room.players[room.currentTurnIndex].diceCount === 0) {
+            room.currentTurnIndex = (room.currentTurnIndex + 1) % room.players.length;
+        }
+
+        io.to(roomName).emit('gameStarted', room);
+    }
 
     socket.on('placeBid', ({ room, quantity, face }) => {
         const r = rooms[room];
         if (!r) return;
 
-        // Server-side validation
         if (r.currentBid) {
             if (quantity < r.currentBid.quantity) return; 
             if (quantity === r.currentBid.quantity && face <= r.currentBid.face) return;
@@ -74,7 +94,6 @@ io.on('connection', (socket) => {
 
         r.currentBid = { quantity, face, player: socket.id };
         
-        // Move turn to next player with dice
         do {
             r.currentTurnIndex = (r.currentTurnIndex + 1) % r.players.length;
         } while (r.players[r.currentTurnIndex].diceCount === 0);
@@ -86,32 +105,28 @@ io.on('connection', (socket) => {
         const r = rooms[roomName];
         if (!r || !r.currentBid) return;
 
-        // 1. Count Dice (1s are wild)
         const allDice = [];
         r.players.forEach(p => allDice.push(...p.dice));
         const targetFace = r.currentBid.face;
-        const count = allDice.filter(d => d === targetFace || d === 1).length;
+        const count = allDice.filter(d => d === targetFace || d === 1).length; // 1s are wild
 
         const bidWasTrue = count >= r.currentBid.quantity;
         
-        // 2. Determine Loser
         let loserIndex;
         if (bidWasTrue) {
-            // Challenger loses (Current Turn)
             loserIndex = r.currentTurnIndex;
         } else {
-            // Bidder loses (Previous Turn / Bid Owner)
             loserIndex = r.players.findIndex(p => p.id === r.currentBid.player);
         }
 
         const loser = r.players[loserIndex];
         loser.diceCount--;
 
-        // 3. Reset Round
+        // Reset Round & Ready Statuses
         r.gameActive = false;
         r.currentBid = null;
+        r.players.forEach(p => p.isReady = false); // <--- Reset ready so they must click again
 
-        // 4. Set turn to the loser (if they have dice), otherwise next person
         r.currentTurnIndex = loserIndex;
         if (loser.diceCount === 0) {
              do {
@@ -126,6 +141,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
+        // Logic to remove player from array could go here
         console.log('User disconnected');
     });
 });
